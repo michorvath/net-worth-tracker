@@ -1,7 +1,7 @@
 #include "database.h"
 
 bool initDatabase() {
-  if (!LittleFS.begin(true)) {
+  if (!LittleFS.begin()) {
       Serial.println("LittleFS mount failed!");
       return false;
   }
