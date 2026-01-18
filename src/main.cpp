@@ -49,7 +49,7 @@ RTC_DATA_ATTR char bitcoinPrice[16] = "N/A";
 RTC_DATA_ATTR float percentChange = 0.0f;
 
 bool connectWiFi() {
-  Serial.print("Connecting to WiFi");
+  Serial.print("Connecting to WiFi...");
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
@@ -62,7 +62,7 @@ bool connectWiFi() {
 
   if (WiFi.status() == WL_CONNECTED) {
     Serial.println(" Connected!");
-    Serial.print("IP address: " + WiFi.localIP().toString());
+    Serial.println("IP address: " + WiFi.localIP().toString());
     return true;
   } else {
     Serial.println(" Failed!");
@@ -71,7 +71,7 @@ bool connectWiFi() {
 }
 
 void syncTime() {
-  Serial.println("Syncing time with NTP...");
+  Serial.print("Syncing time with NTP...");
   configTime(GMT_OFFSET_SEC, DAYLIGHT_OFFSET_SEC, NTP_SERVER);
 
   // wait for time to sync (up to 10 seconds)
@@ -223,24 +223,21 @@ void setup() {
     if (fetchedNetWorth != 0) {
       netWorth = fetchedNetWorth;
       initialized = true;
-      Serial.printf("Net worth updated: $%d\n", netWorth);
 
-      // Store today's net worth in database
       saveNetWorth(getFormattedDate().c_str(), netWorth);
 
-      // Get percentage change (current day vs previous day)
+      // get percentage change (current day vs previous day)
       percentChange = getPercentageChange(1);
       Serial.printf("24h change: %.1f%%\n", percentChange);
     } else if (!initialized) {
-      // API failed and first boot with no stored data - show 0
+      // API failed and first boot with no stored data, show 0
       netWorth = 0;
       Serial.println("API fetch failed on first boot, showing $0");
     } else {
-      // API failed but we have a cached value - keep it
+      // API failed but we have a cached value, keep it
       Serial.printf("API fetch failed, using cached value: $%d\n", netWorth);
     }
 
-    // Fetch market prices (cached in RTC memory, not stored in database)
     String fetchedGold = fetchGoldPrice();
     if (fetchedGold != "N/A") {
       strncpy(goldPrice, fetchedGold.c_str(), sizeof(goldPrice) - 1);

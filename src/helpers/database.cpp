@@ -65,7 +65,7 @@ bool saveNetWorth(const char* date, int32_t netWorth) {
       return false;
     }
 
-    Serial.printf("Updated net worth for %s: $%.2f\n", date, netWorth / 100.0);
+    Serial.printf("Updated net worth for %s: $%d\n", date, netWorth);
   } else {
     File file = LittleFS.open(DB_FILE, FILE_APPEND);
     if (!file) {
@@ -81,7 +81,7 @@ bool saveNetWorth(const char* date, int32_t netWorth) {
       return false;
     }
 
-    Serial.printf("Saved net worth for %s: $%.2f\n", date, netWorth / 100.0);
+    Serial.printf("Saved net worth for %s: $%d\n", date, netWorth);
   }
 
   return true;
@@ -141,7 +141,6 @@ float getPercentageChange(int daysAgo) {
     return 0.0f;
   }
 
-  // calculate percentage change
   if (past.netWorth == 0) {
     return 0.0f;
   }

@@ -111,7 +111,6 @@ int32_t fetchNetWorth() {
     }
   }
 
-  Serial.printf("Total Net Worth: $%.2f\n", totalNetWorth);
   return (int32_t)round(totalNetWorth);
 }
 
