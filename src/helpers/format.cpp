@@ -19,7 +19,7 @@ String formatCurrency(int32_t value) {
 String formatPossessive(const char* name) {
   String nameStr = String(name);
   int len = nameStr.length();
-  if (len > 0 && (nameStr[len - 1] == "s" || nameStr[len - 1] == "S")) {
+  if (len > 0 && (nameStr[len - 1] == 's' || nameStr[len - 1] == 'S')) {
     return nameStr + "'";
   }
   return nameStr + "'s";
