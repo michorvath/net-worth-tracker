@@ -1,0 +1,15 @@
+// copy this file to configuration.h and customize your settings
+
+#ifndef CONFIGURATION_H
+#define CONFIGURATION_H
+
+// your name for the header banner (will be shown as "Name's Net Worth")
+#define OWNER_NAME "Your Name"
+
+// a low battery warning will be displayed if below this percentage
+#define BATTERY_LOW_THRESHOLD 10
+
+// number of minutes to wait in deep sleep before refreshing
+#define SLEEP_DURATION 240 // 4 hours
+
+#endif
