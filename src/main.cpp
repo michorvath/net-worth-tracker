@@ -19,8 +19,7 @@
 
 /*
   To do:
-  - calculate time to $1,000,000 and display
-  - explore rendering rough line chart in bottom corner of last 30 days of change
+  - explore rendering sparkline chart in bottom corner of last 30 days of change
   - add no wifi icon to display if failed to connect to WiFi
   - add icon or indicator text to display if using cached values
 */
@@ -165,7 +164,7 @@ void updateScreen() {
     }
     drawText(display, netWorthStr.c_str(), 400, 240, HAlign::Center, VAlign::Center);
 
-    // percentage change indicator - below net worth
+    // percentage change indicator - centered below net worth
     display.setFont(&FreeSans12pt7b);
     bool isPositive = percentChange >= 0;
     uint16_t changeColor = isPositive ? GxEPD_GREEN : GxEPD_RED;
@@ -189,6 +188,14 @@ void updateScreen() {
     display.setTextColor(changeColor);
     int textX = startX + triangleSize + triangleTextGap;
     drawText(display, percentText.c_str(), textX, changeY, HAlign::Left, VAlign::Center);
+
+    // goal projection - centered below percentage text
+    display.setFont(&FreeSans12pt7b);
+    display.setTextColor(GxEPD_BLACK);
+    String goalProjection = getGoalProjection();
+    if (goalProjection != "") {
+      drawText(display, goalProjection.c_str(), 400, 345, HAlign::Center, VAlign::Center);
+    }
 
     // last updated time - bottom right
     display.setFont(&FreeSans12pt7b);

@@ -1,4 +1,6 @@
 #include "database.h"
+#include "configuration.h"
+#include "format.h"
 
 bool initDatabase() {
   if (!LittleFS.begin()) {
@@ -90,7 +92,9 @@ bool saveNetWorth(const char* date, int32_t netWorth) {
 bool getLatestNetWorth(DailyNetWorth& result) {
   File file = LittleFS.open(DB_FILE, FILE_READ);
   if (!file || file.size() < sizeof(DailyNetWorth)) {
-    if (file) file.close();
+    if (file) {
+      file.close();
+    }
     return false;
   }
 
@@ -101,9 +105,32 @@ bool getLatestNetWorth(DailyNetWorth& result) {
   return bytesRead == sizeof(DailyNetWorth);
 }
 
+bool getNetWorthDaysAgo(int daysAgo, DailyNetWorth& result) {
+  int recordCount = getRecordCount();
+  if (recordCount == 0) {
+    return false;
+  }
+
+  // clamp to oldest available if not enough history
+  int targetIndex = max(0, recordCount - 1 - daysAgo);
+
+  File file = LittleFS.open(DB_FILE, FILE_READ);
+  if (!file) {
+    return false;
+  }
+
+  file.seek(targetIndex * sizeof(DailyNetWorth));
+  size_t bytesRead = file.read((uint8_t*)&result, sizeof(DailyNetWorth));
+  file.close();
+
+  return bytesRead == sizeof(DailyNetWorth);
+}
+
 int getNetWorthHistory(DailyNetWorth* buffer, int maxDays) {
   File file = LittleFS.open(DB_FILE, FILE_READ);
-  if (!file) return 0;
+  if (!file) {
+    return 0;
+  }
 
   int totalRecords = file.size() / sizeof(DailyNetWorth);
   int toRead = min(maxDays, totalRecords);
@@ -117,27 +144,13 @@ int getNetWorthHistory(DailyNetWorth* buffer, int maxDays) {
 }
 
 float getPercentageChange(int daysAgo) {
-  int recordCount = getRecordCount();
-  if (recordCount < 2) return 0.0f;
-
   DailyNetWorth latest;
-  if (!getLatestNetWorth(latest)) return 0.0f;
-
-  // calculate how far back to go (limited by available records)
-  int targetIndex = max(0, recordCount - 1 - daysAgo);
-
-  // read the target record
-  File file = LittleFS.open(DB_FILE, FILE_READ);
-  if (!file) {
+  if (!getLatestNetWorth(latest)) {
     return 0.0f;
   }
 
-  file.seek(targetIndex * sizeof(DailyNetWorth));
   DailyNetWorth past;
-  size_t bytesRead = file.read((uint8_t*)&past, sizeof(DailyNetWorth));
-  file.close();
-
-  if (bytesRead != sizeof(DailyNetWorth)) {
+  if (!getNetWorthDaysAgo(daysAgo, past)) {
     return 0.0f;
   }
 
@@ -147,4 +160,71 @@ float getPercentageChange(int daysAgo) {
 
   float change = ((float)(latest.netWorth - past.netWorth) / (float)past.netWorth) * 100.0f;
   return change;
+}
+
+String getGoalProjection() {
+  int recordCount = getRecordCount();
+
+  // need at least 14 days of data for a "meaningful" projection
+  if (recordCount < 14) {
+    return "";
+  }
+
+  DailyNetWorth currentNW;
+  if (!getLatestNetWorth(currentNW)) {
+    return "";
+  }
+
+  if (currentNW.netWorth >= GOAL) {
+    return "Goal Reached!";
+  }
+
+  DailyNetWorth startNW;
+  if (!getNetWorthDaysAgo(365, startNW)) {
+    return "";
+  }
+
+  float delta = (float)(currentNW.netWorth - startNW.netWorth);
+
+  // scale up delta to annual velocity if we have less than a year of data
+  int daysOfData = min(recordCount, 365);
+  float annualVelocity = delta * (365.0f / (float)daysOfData);
+
+  // if recent velocity is negative but we have more history, try all-time average
+  if (annualVelocity <= 0 && recordCount > 365) {
+    DailyNetWorth oldestNW;
+    if (getNetWorthDaysAgo(recordCount - 1, oldestNW)) {
+      float allTimeDelta = (float)(currentNW.netWorth - oldestNW.netWorth);
+      annualVelocity = allTimeDelta * (365.0f / (float)recordCount);
+    }
+  }
+
+  String goalStr = formatCurrency(GOAL);
+
+  if (annualVelocity <= 0) {
+    return "";
+  }
+
+  float gap = (float)(GOAL - currentNW.netWorth);
+  float years = gap / annualVelocity;
+  float totalMonths = years * 12.0f;
+
+  if (totalMonths < 1.0f) {
+    return "Less than a month to " + goalStr;
+  }
+
+  if (years < 1.0f) {
+    int m = (int)floor(totalMonths);
+    if (m < 1) m = 1;
+    return String(m) + (m == 1 ? " month to " : " months to ") + goalStr;
+  }
+
+  float roundedYears = round(years * 10.0f) / 10.0f;
+  if (roundedYears == (int)roundedYears) {
+    return String((int)roundedYears) + " year" + ((int)roundedYears == 1 ? "" : "s") + " to " + goalStr;
+  }
+
+  char buffer[16];
+  snprintf(buffer, sizeof(buffer), "%.1f", roundedYears);
+  return String(buffer) + " years to " + goalStr;
 }

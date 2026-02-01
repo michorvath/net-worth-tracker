@@ -8,8 +8,8 @@
 #define DATE_LEN 11 // "MM-DD-YYYY\0"
 
 struct DailyNetWorth {
-    char date[DATE_LEN]; // "MM-DD-YYYY"
-    int32_t netWorth; // net worth in whole dollars (rounded)
+  char date[DATE_LEN]; // "MM-DD-YYYY"
+  int32_t netWorth; // net worth in whole dollars (rounded)
 };
 
 // initialize LittleFS filesystem
@@ -31,5 +31,11 @@ int getRecordCount();
 
 // get the most recent net worth value
 bool getLatestNetWorth(DailyNetWorth& result);
+
+// get net worth from X days ago (or oldest available if not enough data)
+bool getNetWorthDaysAgo(int daysAgo, DailyNetWorth& result);
+
+// get the linear goal projection
+String getGoalProjection();
 
 #endif
