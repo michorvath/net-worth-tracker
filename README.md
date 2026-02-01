@@ -25,3 +25,5 @@ A red low battery indicator pill will display on the top left of the display whe
 The sparkline graph in the bottom left shows your networth history over X amount of days (which can be configured via the configuration header file).
 
 There is also a dynamic goal projection line "8.4 years to $1,000,000", etc. It is linear and fairly basic, but it becomes more accurate over time, with a larger data sample. 365+ days of data hits the sweet spot of being semi useful.
+
+![Example of the display in action](example.png)
