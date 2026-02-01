@@ -15,4 +15,7 @@
 // dollar amount to project years until reached
 #define GOAL 1000000
 
+// number of days to include in the sparkline graph
+#define SPARKLINE_DAYS 30
+
 #endif

@@ -19,7 +19,6 @@
 
 /*
   To do:
-  - explore rendering sparkline chart in bottom corner of last 30 days of change
   - add no wifi icon to display if failed to connect to WiFi
   - add icon or indicator text to display if using cached values
 */
@@ -110,6 +109,14 @@ void updateScreen() {
   int bannerHeight = textH + (headerPadding * 2);
   bool lowBattery = isBatteryLow();
 
+  // get sparkline historical data
+  DailyNetWorth historyBuffer[SPARKLINE_DAYS];
+  int historyCount = getNetWorthHistory(historyBuffer, SPARKLINE_DAYS);
+  int32_t sparklineValues[SPARKLINE_DAYS];
+  for (int i = 0; i < historyCount; i++) {
+    sparklineValues[i] = historyBuffer[i].netWorth;
+  }
+
   display.firstPage();
   do {
     display.fillScreen(GxEPD_WHITE);
@@ -197,8 +204,13 @@ void updateScreen() {
       drawText(display, goalProjection.c_str(), 400, 345, HAlign::Center, VAlign::Center);
     }
 
+    // sparkline - bottom left corner (historical trend)
+    if (historyCount >= 7) {
+      drawSparkLine(display, 15, 480 - 10 - 80, 240, 80, sparklineValues, historyCount);
+    }
+
     // last updated time - bottom right
-    display.setFont(&FreeSans12pt7b);
+    display.setFont(&FreeSansOblique9pt7b);
     display.setTextColor(GxEPD_BLACK);
     String timeStr = getFormattedTime();
     drawText(display, timeStr.c_str(), 800 - 15, 480 - 10, HAlign::Right, VAlign::Bottom);

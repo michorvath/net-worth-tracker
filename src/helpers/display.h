@@ -38,4 +38,15 @@ void drawTriangle(
   uint16_t color
 );
 
+// draw a sparkline chart showing historical values
+void drawSparkLine(
+  Display& display,
+  int16_t x,
+  int16_t y,
+  int16_t width,
+  int16_t height,
+  int32_t* values,
+  int count
+);
+
 #endif
