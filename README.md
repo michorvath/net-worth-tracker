@@ -21,3 +21,7 @@ By default, it wakes from deep sleep 6 times a day to sync via WiFi.
 > The battery should last for several months with the default 4 hour refresh rate. A more frequent refresh rate is unnecessary as Plaid only syncs so frequently and even if you have 6-8 accounts, the 4 hour window should catch different synchronizations as well as equity fluctuations.
 
 A red low battery indicator pill will display on the top left of the display when you need to charge it.
+
+The sparkline graph in the bottom left shows your networth history over X amount of days (which can be configured via the configuration header file).
+
+There is also a dynamic goal projection line "8.4 years to $1,000,000", etc. It is linear and fairly basic, but it becomes more accurate over time, with a larger data sample. 365+ days of data hits the sweet spot of being semi useful.
