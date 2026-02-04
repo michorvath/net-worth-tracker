@@ -16,12 +16,7 @@
 #include "helpers/database.h"
 #include "credentials.h"
 #include "configuration.h"
-
-/*
-  To do:
-  - add no wifi icon to display if failed to connect to WiFi
-  - add icon or indicator text to display if using cached values
-*/
+#include "icons/no_wifi.h"
 
 #define EPD_SCK   7
 #define EPD_MOSI  9
@@ -45,6 +40,8 @@ RTC_DATA_ATTR bool initialized = false;
 RTC_DATA_ATTR char goldPrice[16] = "N/A";
 RTC_DATA_ATTR char bitcoinPrice[16] = "N/A";
 RTC_DATA_ATTR float percentChange = 0.0f;
+
+bool wifiConnected = false;
 
 bool connectWiFi() {
   Serial.print("Connecting to WiFi...");
@@ -140,6 +137,7 @@ void updateScreen() {
     drawText(display, btcText.c_str(), 800 - priceMarginRight, priceStartY + 22, HAlign::Right, VAlign::Top);
 
     // low battery warning pill - top left below header
+    int warningYOffset = bannerHeight + 6 + 10; // starting Y for warnings area
     if (lowBattery) {
       const char* lowBattText = "LOW BATTERY";
       const int pillPaddingX = 12;
@@ -155,11 +153,19 @@ void updateScreen() {
       int pillW = btw + (pillPaddingX * 2);
       int pillH = bth + (pillPaddingY * 2);
       int pillX = pillMargin;
-      int pillY = bannerHeight + 6 + pillMargin;
+      int pillY = warningYOffset;
 
       display.fillRoundRect(pillX, pillY, pillW, pillH, pillRadius, GxEPD_RED);
       display.setTextColor(GxEPD_WHITE);
       drawText(display, lowBattText, pillX + pillW / 2, pillY + pillH / 2, HAlign::Center, VAlign::Center);
+
+      warningYOffset = pillY + pillH + 8; // update offset for next warning
+    }
+
+    // no wifi icon - top left below header (and below low battery if present)
+    if (!wifiConnected) {
+      const int iconMargin = 10;
+      display.drawBitmap(iconMargin, warningYOffset, icon_no_wifi, ICON_NO_WIFI_WIDTH, ICON_NO_WIFI_HEIGHT, GxEPD_RED);
     }
 
     // net worth value - center of screen
@@ -235,7 +241,8 @@ void setup() {
     Serial.printf("Loaded stored net worth from %s: $%d\n", lastStored.date, netWorth);
   }
 
-  if (connectWiFi()) {
+  wifiConnected = connectWiFi();
+  if (wifiConnected) {
     syncTime();
 
     int32_t fetchedNetWorth = fetchNetWorth();
