@@ -88,18 +88,15 @@ void drawSparkLine(
     return;
   }
 
-  // find min, max, and calculate average
+  // find min and max for scaling
   int32_t minVal = values[0];
   int32_t maxVal = values[0];
-  int64_t sum = 0;
 
   for (int i = 0; i < count; i++) {
     if (values[i] < minVal) minVal = values[i];
     if (values[i] > maxVal) maxVal = values[i];
-    sum += values[i];
   }
 
-  int32_t avgVal = (int32_t)(sum / count);
   int32_t range = maxVal - minVal;
 
   // avoid division by zero if all values are the same
@@ -107,9 +104,7 @@ void drawSparkLine(
     range = 1;
   }
 
-  // center line Y position (represents average visually)
-  int16_t centerY = y + (height / 2);
-  display.drawLine(x, centerY, x + width, centerY, GxEPD_BLACK);
+  int32_t refVal = values[0]; // use first (oldest) value as reference point for coloring
 
   // helper lambda to convert a value to Y coordinate
   // min maps to bottom (y + height), max maps to top (y)
@@ -117,6 +112,10 @@ void drawSparkLine(
     float normalized = (float)(val - minVal) / (float)range;
     return y + height - (normalized * height);
   };
+
+  // reference line Y position (represents starting value)
+  float refY = valueToY(refVal);
+  display.drawLine(x, (int16_t)refY, x + width, (int16_t)refY, GxEPD_BLACK);
 
   float segmentWidth = (float)width / (float)(count - 1);
   for (int i = 0; i < count - 1; i++) {
@@ -141,9 +140,9 @@ void drawSparkLine(
       float sx2 = x1 + (x2 - x1) * t2;
       float sy2 = y1 + (y2 - y1) * t2;
 
-      // use midpoint Y to determine color (above or below center line)
+      // use midpoint Y to determine color (above or below reference line)
       float midY = (sy1 + sy2) / 2.0f;
-      uint16_t color = (midY < centerY) ? GxEPD_GREEN : GxEPD_RED;
+      uint16_t color = (midY <= refY) ? GxEPD_GREEN : GxEPD_RED;
 
       // draw line twice with 1px Y offset for 2px thickness
       display.drawLine((int16_t)sx1, (int16_t)sy1, (int16_t)sx2, (int16_t)sy2, color);
