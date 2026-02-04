@@ -1,6 +1,7 @@
 #include "database.h"
 #include "configuration.h"
 #include "format.h"
+#include <math.h>
 
 bool initDatabase() {
   if (!LittleFS.begin()) {
@@ -206,7 +207,54 @@ String getGoalProjection() {
   }
 
   float gap = (float)(GOAL - currentNW.netWorth);
-  float years = gap / annualVelocity;
+  float years;
+
+  /*
+    calculate growth rate of velocity based on available data
+    this accounts for accelerating wealth accumulation over time
+  */
+  float growthRate = 0.0f;
+  bool useGrowthProjection = false;
+
+  int termDays = 0;
+  if (recordCount >= 730) {
+    termDays = 365; // 2+ years: compare recent 12 months to prior 12 months
+  } else if (recordCount >= 365) {
+    termDays = 180; // 1-2 years: compare recent 6 months to prior 6 months
+  } else if (recordCount >= 180) {
+    termDays = 90; // 6-12 months: compare recent 3 months to prior 3 months
+  }
+
+  if (termDays > 0) {
+    DailyNetWorth firstTermNW, secondTermNW;
+    if (getNetWorthDaysAgo(termDays, firstTermNW) && getNetWorthDaysAgo(termDays * 2, secondTermNW)) {
+      float recentDelta = (float)(currentNW.netWorth - firstTermNW.netWorth);
+      float priorDelta = (float)(firstTermNW.netWorth - secondTermNW.netWorth);
+      if (priorDelta > 0 && recentDelta > 0) {
+        growthRate = (recentDelta - priorDelta) / priorDelta;
+        useGrowthProjection = true;
+      }
+    }
+  }
+
+  if (useGrowthProjection && growthRate > 0.01f && growthRate < 2.0f) {
+    /*
+      use geometric series formula to account for accelerating growth
+      sum after n years = V * ((1 + g)^n - 1) / g
+      solving for n: n = log(1 + gap * g / V) / log(1 + g)
+    */
+
+    float term = 1.0f + (gap * growthRate) / annualVelocity;
+    if (term > 0) {
+      years = log(term) / log(1.0f + growthRate);
+    } else {
+      years = gap / annualVelocity; // fallback to linear if negative growth rate
+    }
+  } else {
+    // < 6 months: use linear projection (constant velocity)
+    years = gap / annualVelocity;
+  }
+
   float totalMonths = years * 12.0f;
 
   if (totalMonths < 1.0f) {
